@@ -7,34 +7,39 @@ const ASSETS = [
   './version.json'
 ];
 
-// App ကို Install လုပ်ချိန်မှာ ဖိုင်အားလုံးကို ဖုန်းထဲ သိမ်းမယ်
+// ၁။ Install လုပ်စဉ်မှာ ဖိုင်တွေကို အတင်းသိမ်းခိုင်းမယ်
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching all assets');
       return cache.addAll(ASSETS);
     })
   );
-  self.skipWaiting();
+  self.skipWaiting(); // ဒီတစ်ကြောင်းက အရေးကြီးတယ် (Version အဟောင်းကို ချက်ချင်းကျော်ဖို့)
 });
 
-// Internet မရှိရင် သိမ်းထားတာတွေကို ပြန်ထုတ်ပြမယ်
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // သိမ်းထားတာရှိရင် ပြမယ်၊ မရှိရင် Network ကနေ ဆွဲမယ်
-      return response || fetch(event.request);
-    })
+// ၂။ Activate ဖြစ်တာနဲ့ App ကို ချက်ချင်း ထိန်းချုပ်ခိုင်းမယ်
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    Promise.all([
+      clients.claim(), // App ပိတ်ပြီး ပြန်ဖွင့်ရင်လည်း ချက်ချင်း အလုပ်လုပ်စေဖို့
+      caches.keys().then((keys) => {
+        return Promise.all(
+          keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        );
+      })
+    ])
   );
 });
 
-// Version အဟောင်းတွေကို ဖျက်ထုတ်မယ်
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
+// ၃။ ဖိုင်တောင်းဆိုမှုတိုင်းကို Cache ထဲကပဲ အရင်ရှာခိုင်းမယ်
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      // Cache ထဲမှာရှိရင် ပြမယ်၊ မရှိရင်မှ Network သွားမယ်
+      return response || fetch(event.request).catch(() => {
+        // အကယ်၍ ၂ ခုလုံးမရရင် index.html ကို ပြန်ပြမယ် (Offline Fallback)
+        return caches.match('./index.html');
+      });
     })
   );
 });
