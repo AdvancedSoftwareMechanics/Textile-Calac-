@@ -1,10 +1,12 @@
 const CACHE_NAME = 'textile-calc-v1';
 const ASSETS = [
   './',
-  './index.html'
+  './index.html',
+  './manifest.json',
+  './sw.js'
 ];
 
-// App ကို Install လုပ်ချိန်မှာ File တွေကို သိမ်းထားမယ်
+// App ကို Install လုပ်ချိန်မှာ ဖိုင်အားလုံးကို သိမ်းမယ်
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -13,7 +15,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Internet မရှိရင် သိမ်းထားတဲ့ Cache ထဲကနေ ပြန်ထုတ်ပြမယ်
+// Internet မရှိရင် သိမ်းထားတာတွေကို ပြန်ထုတ်ပြမယ်
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
