@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <title>Textile Calc</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <script>
         (function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('textile-theme')||'dark')})()
     </script>
@@ -91,26 +94,20 @@
     </div>
 
     <script>
-        // --- FIXED UPDATE SYSTEM ---
-        const CURRENT_VERSION = "1.0"; 
-        const RAW_JSON_URL = "https://raw.githubusercontent.com/asmfabric/Textile-Calac-/main/version.json";
+        // --- SILENT AUTO-UPDATE SYSTEM ---
+        // ဒီစနစ်က GitHub မှာ Code ပြင်လိုက်တာနဲ့ User ဖွင့်တဲ့အခါ အလိုအလျောက် Refresh ဖြစ်စေပါတယ်
+        (function() {
+            const lastCheck = localStorage.getItem('lastUpdateCheck');
+            const now = new Date().getTime();
+            
+            // ၁ နာရီတစ်ခါ အလိုအလျောက် Update စစ်ပြီး Refresh လုပ်မယ်
+            if (!lastCheck || (now - lastCheck > 3600000)) {
+                localStorage.setItem('lastUpdateCheck', now);
+                window.location.reload(true); // Force reload from server
+            }
+        })();
 
-        function checkUpdate() {
-            fetch(RAW_JSON_URL + "?v=" + new Date().getTime()) // Cache မငြိအောင် Time ပါထည့်စစ်မယ်
-                .then(res => res.json())
-                .then(data => {
-                    // GitHub က နံပါတ်က လက်ရှိထက် ကြီးနေမှ ပြမယ်
-                    if (parseFloat(data.version) > parseFloat(CURRENT_VERSION)) {
-                        if (confirm("Version " + data.version + " အသစ်ထွက်ရှိနေပါသည်။ Telegram ကနေ Update ယူမလား?")) {
-                            window.location.href = data.url;
-                        }
-                    }
-                })
-                .catch(e => console.log("Offline mode"));
-        }
-        setTimeout(checkUpdate, 3000);
-
-        // --- CALC LOGIC ---
+        // --- ORIGINAL APP LOGIC ---
         setTimeout(()=>document.getElementById('splash-screen').classList.add('hide-splash'),2200);
         let q=!1;
         function toggleCalc(){
