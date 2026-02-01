@@ -11,24 +11,36 @@
         // Theme သိမ်းဆည်းခြင်း
         (function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('textile-theme')||'dark')})()
         
-        // --- OFFLINE SYSTEM (SERVICE WORKER) ---
+        // --- OFFLINE SYSTEM (FIXED FOR APK) ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Offline system ready!'))
+                // လမ်းကြောင်းကို ./ ဖယ်ပြီး register လုပ်ကြည့်ပါ
+                navigator.serviceWorker.register('sw.js', { scope: './' })
+                .then(reg => {
+                    console.log('Offline system ready!');
+                    // Update အသစ်ရှိရင် ချက်ချင်းယူခိုင်းမယ်
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                window.location.reload();
+                            }
+                        };
+                    };
+                })
                 .catch(err => console.log('Offline system failed.'));
             });
         }
 
-        // --- LIVE UPDATE SYSTEM (FIXED) ---
+        // --- LIVE UPDATE SYSTEM ---
         (function() {
             if (navigator.onLine) {
                 const lastCheck = localStorage.getItem('lastUpdateCheck');
                 const now = new Date().getTime();
-                // ၃၀ စက္ကန့်ခြားမှ တစ်ခါ Update စစ်မည် (Internet မရှိလျှင် Reload မလုပ်ပါ)
-                if (!lastCheck || (now - lastCheck > 30000)) {
+                if (!lastCheck || (now - lastCheck > 60000)) {
                     localStorage.setItem('lastUpdateCheck', now);
-                    window.location.reload(); 
+                    // Internet ရှိမှသာ reload လုပ်ဖို့ သေချာစေရမယ်
+                    fetch('.').then(res => { if(res.ok) window.location.reload(); }).catch(() => {});
                 }
             }
         })();
