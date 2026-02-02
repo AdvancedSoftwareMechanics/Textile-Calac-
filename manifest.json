@@ -1,13 +1,13 @@
 {
-  "name": "Textile Calc",
+  "name": "Textile Calculator",
   "short_name": "TextileCalc",
-  "start_url": ".",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/1023/1023656.png",
       "sizes": "512x512",
       "type": "image/png"
     }
