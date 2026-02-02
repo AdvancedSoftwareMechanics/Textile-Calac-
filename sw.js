@@ -1,49 +1,40 @@
-const CACHE_NAME = 'textile-calc-v2'; // Update တင်တိုင်း ဒါလေးကို v3, v4 စသဖြင့် ပြောင်းပေးပါ
+const CACHE_NAME = 'textile-calc-live-v1';
 const ASSETS = [
   './',
   './index.html',
   'https://asmfabric.github.io/Textile-Calac-/'
 ];
 
-// ၁။ Install - ဖိုင်တွေကို Cache ထဲ စသိမ်းမယ်
+// ၁။ Install - ဖိုင်တွေကို သိမ်းဆည်းခြင်း
 self.addEventListener('install', (e) => {
-  self.skipWaiting(); // Update ရှိရင် စောင့်မနေဘဲ ချက်ချင်း Install လုပ်ခိုင်းတာ
+  self.skipWaiting();
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Caching assets');
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
-// ၂။ Activate - Version အဟောင်း Cache တွေကို ရှင်းပစ်မယ် (Live Update အတွက် အဓိက)
+// ၂။ Activate - အဟောင်းတွေကို ရှင်းထုတ်ခြင်း
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('Removing old cache', key);
-            return caches.delete(key);
-          }
-        })
-      );
+      return Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
     })
   );
 });
 
-// ၃။ Fetch - Internet ရှိရင် Network ကယူ၊ မရှိရင် သိမ်းထားတဲ့ Cache ကပြ
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    fetch(e.request)
-      .then((res) => {
-        // Network ရှိရင် Update ဖြစ်အောင် Cache ထဲ ထပ်သိမ်းပေးမယ်
-        const resClone = res.clone();
+// ၃။ Fetch - Offline ရော Live Update ရော အလုပ်လုပ်မည့် အပိုင်း
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        // Internet ရှိရင် Cache ကို အသစ်လဲပေးမယ် (Live Update)
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(e.request, resClone);
+          cache.put(event.request, networkResponse.clone());
         });
-        return res;
-      })
-      .catch(() => caches.match(e.request)) // Internet မရှိရင် Cache က ဖိုင်ကို သုံးမယ်
+        return networkResponse;
+      });
+      // Cache ရှိရင် အရင်ပြမယ် (Recent ရှင်းလည်း ပွင့်အောင်)၊ မရှိရင် Network က ယူမယ်
+      return cachedResponse || fetchPromise;
+    })
   );
 });
