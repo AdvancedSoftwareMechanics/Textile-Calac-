@@ -4,48 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
     <title>Textile Calc</title>
-    <link rel="manifest" href="manifest.json">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    
     <script>
-        // Theme သိမ်းဆည်းခြင်း
         (function(){document.documentElement.setAttribute('data-theme',localStorage.getItem('textile-theme')||'dark')})()
-        
-        // --- OFFLINE SYSTEM (FIXED FOR APK) ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                // လမ်းကြောင်းကို ./ ဖယ်ပြီး register လုပ်ကြည့်ပါ
-                navigator.serviceWorker.register('sw.js', { scope: './' })
-                .then(reg => {
-                    console.log('Offline system ready!');
-                    // Update အသစ်ရှိရင် ချက်ချင်းယူခိုင်းမယ်
-                    reg.onupdatefound = () => {
-                        const installingWorker = reg.installing;
-                        installingWorker.onstatechange = () => {
-                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                window.location.reload();
-                            }
-                        };
-                    };
-                })
-                .catch(err => console.log('Offline system failed.'));
-            });
-        }
-
-        // --- LIVE UPDATE SYSTEM ---
-        (function() {
-            if (navigator.onLine) {
-                const lastCheck = localStorage.getItem('lastUpdateCheck');
-                const now = new Date().getTime();
-                if (!lastCheck || (now - lastCheck > 60000)) {
-                    localStorage.setItem('lastUpdateCheck', now);
-                    // Internet ရှိမှသာ reload လုပ်ဖို့ သေချာစေရမယ်
-                    fetch('.').then(res => { if(res.ok) window.location.reload(); }).catch(() => {});
-                }
-            }
-        })();
     </script>
-    
     <style>
         :root,[data-theme="dark"]{--bg:#000;--text-bright:#fff;--warn:#ff3b30;--unit-color:rgba(255,255,255,0.5);--market-color:#00ff88}
         [data-theme="light"]{--bg:#fff;--text-bright:#000;--unit-color:rgba(0,0,0,0.4);--market-color:#008f4c}
@@ -78,7 +39,8 @@
         .unit-tag{font-size:.7rem;font-weight:700;color:var(--unit-color);margin-left:6px;display:none;line-height:1.2;text-align:left;min-width:65px}
         .show-unit{display:inline-block}
         .market-i{position:absolute;right:-15px;top:-10px;font-style:normal;font-size:.7rem;border:1px solid var(--unit-color);border-radius:50%;padding:0 5px;opacity:0}
-        .show-i{opacity:.7}.market-active{color:var(--market-color)!important}.fade-out{opacity:0!important}
+        .show-i{opacity:.7}.market-active{color:var(--market-color)!important}
+        .fade-out{opacity:0!important}
         .theme-btn{position:fixed;top:40px;right:25px;background:0 0;border:none;color:var(--text-bright);font-size:.75rem;font-weight:700;z-index:10000}
         .calc-trigger{position:fixed;top:65px;right:25px;background:0 0;border:none;color:var(--text-bright);font-size:.75rem;font-weight:700;z-index:10000;opacity:.6}
         #calc-overlay{position:fixed;top:75px;left:0;width:100%;height:calc(100% - 75px);background:var(--bg);z-index:9000;display:none;flex-direction:column;padding:20px}
@@ -95,28 +57,52 @@
     <div id="splash-screen"><div id="splash-text">TEXTILE CALC</div></div>
     <button class="theme-btn" onclick="toggleTheme()">THEME</button>
     <button class="calc-trigger" id="calc-master-btn" onclick="toggleCalc()">CALCULATOR</button>
-    
     <div class="app-header">
         <div id="app-title">TEXTILE CALC</div>
         <div class="header-results">
-            <div class="total-box"><span class="total-label">GRAND TOTAL (စုစုပေါင်းကျသင့်ငွေ)</span><span class="total-val" id="total-res">0</span></div>
+            <div class="total-box">
+                <span class="total-label">GRAND TOTAL (စုစုပေါင်းကျသင့်ငွေ)</span>
+                <span class="total-val" id="total-res">0</span>
+            </div>
             <div class="sub-res-row">
-                <div class="res-item"><span class="res-label">၁ ကီလို ထွက်ကိုက် (YIELD)</span><span class="res-val" id="yield-res">0.00</span></div>
-                <div class="res-item" style="text-align:right"><span class="res-label">GSM</span><span class="res-val"><span id="gsm-res">0</span><span id="gsm-sign"></span></span></div>
+                <div class="res-item">
+                    <span class="res-label">၁ ကီလို ထွက်ကိုက် (YIELD)</span>
+                    <span class="res-val" id="yield-res">0.00</span>
+                </div>
+                <div class="res-item" style="text-align:right">
+                    <span class="res-label">GSM</span>
+                    <span class="res-val"><span id="gsm-res">0</span><span id="gsm-sign"></span></span>
+                </div>
             </div>
         </div>
     </div>
-
     <div class="main-content">
-        <div class="row"><div class="label-group"><span class="label-mm">အလိပ် ကီလို</span><span class="label-en">Roll Weight</span></div><div class="input-group"><input type="number" id="kg" placeholder="0"><span class="unit-tag" id="unit-kg">KG<br>ကီလို</span></div></div>
-        <div class="row" onclick="toggleUnit()"><div class="label-group"><span class="label-mm" id="u-mm">အလိပ် ကိုက်</span><span class="label-en" id="u-en">Roll Yards</span></div><div class="input-group"><i class="market-i" id="market-i" onmousedown="holdMarket(true)" onmouseup="holdMarket(false)" ontouchstart="holdMarket(true)" ontouchend="holdMarket(false)" onclick="event.stopPropagation()">i</i><input type="number" id="u-val" placeholder="0" onclick="event.stopPropagation()"><span class="unit-tag" id="unit-u">YD<br>ကိုက်</span></div></div>
-        <div class="row"><div class="label-group"><span class="label-mm">အလိပ် အနံ</span><span class="label-en">Fabric Width</span></div><div class="input-group"><input type="number" id="width" placeholder="0"><span class="unit-tag" id="unit-width">INCH<br>လက်မ</span></div></div>
-        <div class="row"><div class="label-group"><input type="number" id="yd_v" value="1" style="width:30px;font-size:1.2rem;text-align:left;float:left;margin-right:8px;font-weight:800;color:var(--text-bright)"><span class="label-mm">ကိုက်ကီလို (Ratio)</span><span class="label-en">Yards per KG</span></div><div class="input-group"><input type="number" id="yd_k" placeholder="0.00"><span class="unit-tag" id="unit-ratio">KG<br>ကီလို</span></div></div>
-        <div class="row"><div class="label-group"><span class="label-mm">၁ ကိုက် ဈေးနှုန်း</span><span class="label-en">Price Per Yard</span></div><div class="input-group"><input type="number" id="p_y" placeholder="0"><span class="unit-tag" id="unit-py">Ks<br>ကျပ်</span></div></div>
-        <div class="row"><div class="label-group"><span class="label-mm">၁ ကီလို ဈေးနှုန်း</span><span class="label-en">Price Per KG</span></div><div class="input-group"><input type="number" id="p_k" placeholder="0"><span class="unit-tag" id="unit-pk">Ks<br>ကျပ်</span></div></div>
+        <div class="row">
+            <div class="label-group"><span class="label-mm">အလိပ် ကီလို</span><span class="label-en">Roll Weight</span></div>
+            <div class="input-group"><input type="number" id="kg" placeholder="0"><span class="unit-tag" id="unit-kg">KG<br>ကီလို</span></div>
+        </div>
+        <div class="row" onclick="toggleUnit()">
+            <div class="label-group"><span class="label-mm" id="u-mm">အလိပ် ကိုက်</span><span class="label-en" id="u-en">Roll Yards</span></div>
+            <div class="input-group"><i class="market-i" id="market-i" onmousedown="holdMarket(true)" onmouseup="holdMarket(false)" ontouchstart="holdMarket(true)" ontouchend="holdMarket(false)" onclick="event.stopPropagation()">i</i><input type="number" id="u-val" placeholder="0" onclick="event.stopPropagation()"><span class="unit-tag" id="unit-u">YD<br>ကိုက်</span></div>
+        </div>
+        <div class="row">
+            <div class="label-group"><span class="label-mm">အလိပ် အနံ</span><span class="label-en">Fabric Width</span></div>
+            <div class="input-group"><input type="number" id="width" placeholder="0"><span class="unit-tag" id="unit-width">INCH<br>လက်မ</span></div>
+        </div>
+        <div class="row">
+            <div class="label-group"><input type="number" id="yd_v" value="1" style="width:30px;font-size:1.2rem;text-align:left;float:left;margin-right:8px;font-weight:800;color:var(--text-bright)"><span class="label-mm">ကိုက်ကီလို (Ratio)</span><span class="label-en">Yards per KG</span></div>
+            <div class="input-group"><input type="number" id="yd_k" placeholder="0.00"><span class="unit-tag" id="unit-ratio">KG<br>ကီလို</span></div>
+        </div>
+        <div class="row">
+            <div class="label-group"><span class="label-mm">၁ ကိုက် ဈေးနှုန်း</span><span class="label-en">Price Per Yard</span></div>
+            <div class="input-group"><input type="number" id="p_y" placeholder="0"><span class="unit-tag" id="unit-py">Ks<br>ကျပ်</span></div>
+        </div>
+        <div class="row">
+            <div class="label-group"><span class="label-mm">၁ ကီလို ဈေးနှုန်း</span><span class="label-en">Price Per KG</span></div>
+            <div class="input-group"><input type="number" id="p_k" placeholder="0"><span class="unit-tag" id="unit-pk">Ks<br>ကျပ်</span></div>
+        </div>
         <div style="text-align:center;padding:40px"><button class="reset-btn" style="background:0 0;border:none;color:var(--warn);font-weight:900" onclick="resetAll()">အားလုံးဖျက်မည် (RESET ALL)</button></div>
     </div>
-
     <div id="calc-overlay">
         <div class="calc-screen"><div id="calc-history"></div><div id="cs">0</div></div>
         <div class="calc-btns">
@@ -129,8 +115,150 @@
     </div>
 
     <script>
-        // --- Calculator Logic ---
-        setTimeout(()=>document.getElementById('splash-screen').classList.add('hide-splash'),2200);let q=!1;function toggleCalc(){const e=document.getElementById('calc-overlay'),t=document.getElementById('calc-master-btn');q=!q;e.style.display=q?'flex':'none';t.innerText=q?"BACK":"CALCULATOR";t.style.color=q?"var(--warn)":"var(--text-bright)";t.style.opacity=q?"1":"0.6"}function toggleTheme(){const e=document.documentElement,t=e.getAttribute('data-theme')==='light'?'dark':'light';e.setAttribute('data-theme',t);localStorage.setItem('textile-theme',t)}let u=!0,f=0,l='',t=0;function holdMarket(e){const n=document.getElementById('u-val');if(e){t=parseFloat(n.value)||0;n.value=((u?t/1.0936:t)*1.1).toFixed(2);n.classList.add('market-active')}else{n.value=t?t.toFixed(2):'';n.classList.remove('market-active')}}function toggleUnit(){clearSecondary();const e=document.getElementById('u-mm'),n=document.getElementById('u-en'),o=document.getElementById('u-val'),i=document.getElementById('unit-u');let s=parseFloat(o.value)||0;if(u){e.innerText="အလိပ် မီတာ";n.innerText="Roll Meters";i.innerHTML="M<br>မီတာ";if(s>0)o.value=(s*.9144).toFixed(2)}else{e.innerText="အလိပ် ကိုက်";n.innerText="Roll Yards";i.innerHTML="YD<br>ကိုက်";if(s>0)o.value=(s/.9144).toFixed(2)}u=!u;runCalc('u-val')}function clearSecondary(){['width','p_y','p_k'].forEach(e=>document.getElementById(e).value='');document.querySelectorAll('.unit-tag').forEach(e=>{if(['unit-width','unit-py','unit-pk'].includes(e.id))e.classList.remove('show-unit')})}const inputs=document.querySelectorAll('.main-content input');inputs.forEach(e=>e.addEventListener('input',t=>{const n=document.getElementById('kg'),o=document.getElementById('u-val');if(t.target.id==='yd_k'&&n.value===''&&o.value===''){l='yd_k';n.readOnly=!0;o.readOnly=!0;document.getElementById('p_y').value='';document.getElementById('p_k').value='';document.querySelectorAll('.unit-tag').forEach(e=>{if(['unit-py','unit-pk'].includes(e.id))e.classList.remove('show-unit')})}if(t.target.id==='yd_v'){updateRatioOnly();return}if(['kg','u-val'].includes(t.target.id))clearSecondary();if(l===''&&t.target.id!=='yd_v')l=t.target.id;const i=t.target.parentElement.querySelector('.unit-tag');if(i)t.target.value.length>0?i.classList.add('show-unit'):i.classList.remove('show-unit');runCalc(t.target.id)}));function updateRatioOnly(){let e=parseFloat(document.getElementById('yd_v').value)||0;if(f>0&&e>0){document.getElementById('yd_k').value=(e/f).toFixed(2);document.getElementById('unit-ratio').classList.add('show-unit')}}function runCalc(e){let n=document.getElementById('kg'),o=document.getElementById('u-val'),i=document.getElementById('yd_k'),s=document.getElementById('yd_v'),a=parseFloat(n.value)||0,r=parseFloat(document.getElementById('width').value)||0,c=parseFloat(o.value)||0,d=parseFloat(s.value)||1,g=parseFloat(i.value)||0,m=parseFloat(document.getElementById('p_y').value)||0,p=parseFloat(document.getElementById('p_k').value)||0;const h=document.getElementById('market-i');if(u&&c>0)h.classList.add('show-i');else h.classList.remove('show-i');let y=u?c:c/.9144;if(e==='yd_k'&&g>0){f=d/g;if(l==='u-val'&&y>0){a=y/f;n.value=a.toFixed(2);document.getElementById('unit-kg').classList.add('show-unit')}else if(l==='kg'&&a>0){let e=f*a;o.value=u?e.toFixed(2):(e*.9144).toFixed(2);document.getElementById('unit-u').classList.add('show-unit')}}else if(a>0&&y>0){f=y/a;i.value=(d/f).toFixed(2);document.getElementById('unit-ratio').classList.add('show-unit')}if(f>0){if(e==='p_y'){p=m*f;document.getElementById('p_k').value=Math.round(p);document.getElementById('unit-pk').classList.add('show-unit')}else if(e==='p_k'){m=p/f;document.getElementById('p_y').value=Math.round(m);document.getElementById('unit-py').classList.add('show-unit')}}let v=f>0&&r>0?1000*1.0936/(f*r*.0254):0;document.getElementById('yield-res').innerText=f>0?f.toFixed(2):"0.00";document.getElementById('total-res').innerText=a>0&&p>0?Math.round(a*p).toLocaleString():"0";document.getElementById('gsm-res').innerText=v>0?Math.round(v):"0";const x=document.getElementById('gsm-sign');if(v>0){let e=Math.round(v);x.innerText=e<110?"- အလွန်ပါး":e<160?"- ပါး":e<220?"- အလတ်":e<300?"- ထူ":"- အလွန်ထူ"}else x.innerText=""}function resetAll(){const e=[document.getElementById('yield-res'),document.getElementById('gsm-res'),document.getElementById('total-res'),document.getElementById('gsm-sign')];inputs.forEach(e=>{if(e.value&&e.id!=='yd_v')e.classList.add('fade-out')});e.forEach(e=>e.classList.add('fade-out'));setTimeout(()=>{inputs.forEach(e=>{e.id==='yd_v'?e.value=1:e.value='';e.readOnly=!1;e.classList.remove('fade-out')});document.querySelectorAll('.unit-tag').forEach(e=>e.classList.remove('show-unit'));document.getElementById('market-i').classList.remove('show-i');l='';f=0;document.getElementById('yield-res').innerText="0.00";document.getElementById('gsm-res').innerText="0";document.getElementById('gsm-sign').innerText="";document.getElementById('total-res').innerText="0";e.forEach(e=>e.classList.remove('fade-out'))},400)}const scr=document.getElementById('cs'),hist=document.getElementById('calc-history');let cV='0',pV='',cO=null,wN=!1;function nm(e){if(wN){cV=e;wN=!1}else cV=cV==='0'?e:cV+e;scr.innerText=cV.substring(0,12)}function del(){cV=cV.length>1?cV.slice(0,-1):'0';scr.innerText=cV}function cl(){cV='0';pV='';cO=null;scr.innerText='0';hist.innerText=''}function op(e){const t=parseFloat(cV);if(cO&&wN){cO=e;hist.innerText=pV+" "+cO;return}if(pV==='')pV=t;else if(cO){const e=pf(pV,t,cO);cV=String(e);pV=e}wN=!0;cO=e;scr.innerText=cV;hist.innerText=pV+" "+cO}function eq(){if(!cO)return;let e=pf(pV,parseFloat(cV),cO);hist.innerText=pV+" "+cO+" "+cV+" =";cV=String(e);pV='';cO=null;wN=!0;scr.innerText=cV.substring(0,12)}function pf(e,t,n){return n==='+'?e+t:n==='-'?e-t:n==='*'?e*t:n==='/'?e/t:n==='%'?e*t/100:t}
+        setTimeout(()=>document.getElementById('splash-screen').classList.add('hide-splash'),2200);
+
+        // Service Worker for Live Update & Offline
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW Registered')).catch(err => console.log('SW Failed'));
+            });
+        }
+
+        let q=!1;
+        function toggleCalc(){
+            const e=document.getElementById('calc-overlay'),t=document.getElementById('calc-master-btn');
+            q=!q;e.style.display=q?'flex':'none';t.innerText=q?"BACK":"CALCULATOR";
+            t.style.color=q?"var(--warn)":"var(--text-bright)";t.style.opacity=q?"1":"0.6"
+        }
+
+        function toggleTheme(){
+            const e=document.documentElement,t=e.getAttribute('data-theme')==='light'?'dark':'light';
+            e.setAttribute('data-theme',t);localStorage.setItem('textile-theme',t)
+        }
+
+        // Persistent Data Logic
+        function saveToLocal() {
+            const data = {
+                kg: document.getElementById('kg').value,
+                u_val: document.getElementById('u-val').value,
+                width: document.getElementById('width').value,
+                yd_v: document.getElementById('yd_v').value,
+                yd_k: document.getElementById('yd_k').value,
+                p_y: document.getElementById('p_y').value,
+                p_k: document.getElementById('p_k').value
+            };
+            localStorage.setItem('textile_saved_calc', JSON.stringify(data));
+        }
+
+        function loadFromLocal() {
+            const saved = localStorage.getItem('textile_saved_calc');
+            if (saved) {
+                const d = JSON.parse(saved);
+                document.getElementById('kg').value = d.kg || '';
+                document.getElementById('u-val').value = d.u_val || '';
+                document.getElementById('width').value = d.width || '';
+                document.getElementById('yd_v').value = d.yd_v || 1;
+                document.getElementById('yd_k').value = d.yd_k || '';
+                document.getElementById('p_y').value = d.p_y || '';
+                document.getElementById('p_k').value = d.p_k || '';
+                
+                // Show units if data exists
+                inputs.forEach(e => {
+                    const tag = e.parentElement.querySelector('.unit-tag');
+                    if(tag && e.value) tag.classList.add('show-unit');
+                });
+                runCalc('kg');
+            }
+        }
+
+        let u=!0,f=0,l='',t=0;
+        function holdMarket(e){
+            const n=document.getElementById('u-val');
+            if(e){t=parseFloat(n.value)||0;n.value=((u?t/1.0936:t)*1.1).toFixed(2);n.classList.add('market-active')}
+            else{n.value=t?t.toFixed(2):'';n.classList.remove('market-active')}
+        }
+
+        function toggleUnit(){
+            clearSecondary();
+            const e=document.getElementById('u-mm'),n=document.getElementById('u-en'),o=document.getElementById('u-val'),i=document.getElementById('unit-u');
+            let s=parseFloat(o.value)||0;
+            if(u){e.innerText="အလိပ် မီတာ";n.innerText="Roll Meters";i.innerHTML="M<br>မီတာ";if(s>0)o.value=(s*.9144).toFixed(2)}
+            else{e.innerText="အလိပ် ကိုက်";n.innerText="Roll Yards";i.innerHTML="YD<br>ကိုက်";if(s>0)o.value=(s/.9144).toFixed(2)}
+            u=!u;runCalc('u-val');saveToLocal();
+        }
+
+        function clearSecondary(){
+            ['width','p_y','p_k'].forEach(e=>document.getElementById(e).value='');
+            document.querySelectorAll('.unit-tag').forEach(e=>{if(['unit-width','unit-py','unit-pk'].includes(e.id))e.classList.remove('show-unit')});
+            saveToLocal();
+        }
+
+        const inputs=document.querySelectorAll('.main-content input');
+        inputs.forEach(e=>e.addEventListener('input',t=>{
+            const n=document.getElementById('kg'),o=document.getElementById('u-val');
+            if(t.target.id==='yd_k'&&n.value===''&&o.value===''){l='yd_k';n.readOnly=!0;o.readOnly=!0}
+            if(t.target.id==='yd_v'){updateRatioOnly();saveToLocal();return}
+            if(['kg','u-val'].includes(t.target.id))clearSecondary();
+            if(l===''&&t.target.id!=='yd_v')l=t.target.id;
+            const i=t.target.parentElement.querySelector('.unit-tag');
+            if(i)t.target.value.length>0?i.classList.add('show-unit'):i.classList.remove('show-unit');
+            runCalc(t.target.id);
+            saveToLocal();
+        }));
+
+        window.addEventListener('load', loadFromLocal);
+
+        function updateRatioOnly(){
+            let e=parseFloat(document.getElementById('yd_v').value)||0;
+            if(f>0&&e>0){document.getElementById('yd_k').value=(e/f).toFixed(2);document.getElementById('unit-ratio').classList.add('show-unit')}
+        }
+
+        function runCalc(e){
+            let n=document.getElementById('kg'),o=document.getElementById('u-val'),i=document.getElementById('yd_k'),s=document.getElementById('yd_v'),a=parseFloat(n.value)||0,r=parseFloat(document.getElementById('width').value)||0,c=parseFloat(o.value)||0,d=parseFloat(s.value)||1,g=parseFloat(i.value)||0,m=parseFloat(document.getElementById('p_y').value)||0,p=parseFloat(document.getElementById('p_k').value)||0;
+            const h=document.getElementById('market-i');
+            if(u&&c>0)h.classList.add('show-i');else h.classList.remove('show-i');
+            let y=u?c:c/.9144;
+            if(e==='yd_k'&&g>0){f=d/g;if(l==='u-val'&&y>0){a=y/f;n.value=a.toFixed(2);document.getElementById('unit-kg').classList.add('show-unit')}else if(l==='kg'&&a>0){let e=f*a;o.value=u?e.toFixed(2):(e*.9144).toFixed(2);document.getElementById('unit-u').classList.add('show-unit')}}
+            else if(a>0&&y>0){f=y/a;i.value=(d/f).toFixed(2);document.getElementById('unit-ratio').classList.add('show-unit')}
+            if(f>0){if(e==='p_y'){p=m*f;document.getElementById('p_k').value=Math.round(p);document.getElementById('unit-pk').classList.add('show-unit')}else if(e==='p_k'){m=p/f;document.getElementById('p_y').value=Math.round(m);document.getElementById('unit-py').classList.add('show-unit')}}
+            let v=f>0&&r>0?1000*1.0936/(f*r*.0254):0;
+            document.getElementById('yield-res').innerText=f>0?f.toFixed(2):"0.00";
+            document.getElementById('total-res').innerText=a>0&&p>0?Math.round(a*p).toLocaleString():"0";
+            document.getElementById('gsm-res').innerText=v>0?Math.round(v):"0";
+            const x=document.getElementById('gsm-sign');
+            if(v>0){let e=Math.round(v);x.innerText=e<110?"- အလွန်ပါး":e<160?"- ပါး":e<220?"- အလတ်":e<300?"- ထူ":"- အလွန်ထူ"}else x.innerText=""
+        }
+
+        function resetAll(){
+            localStorage.removeItem('textile_saved_calc');
+            inputs.forEach(e=>{if(e.value&&e.id!=='yd_v')e.classList.add('fade-out')});
+            setTimeout(()=>{
+                inputs.forEach(e=>{e.id==='yd_v'?e.value=1:e.value='';e.readOnly=!1;e.classList.remove('fade-out')});
+                document.querySelectorAll('.unit-tag').forEach(e=>e.classList.remove('show-unit'));
+                document.getElementById('market-i').classList.remove('show-i');l='';f=0;
+                document.getElementById('yield-res').innerText="0.00";document.getElementById('gsm-res').innerText="0";
+                document.getElementById('gsm-sign').innerText="";document.getElementById('total-res').innerText="0";
+            },400)
+        }
+
+        // Calculator Logic
+        const scr=document.getElementById('cs'),hist=document.getElementById('calc-history');
+        let cV='0',pV='',cO=null,wN=!1;
+        function nm(e){if(wN){cV=e;wN=!1}else cV=cV==='0'?e:cV+e;scr.innerText=cV.substring(0,12)}
+        function del(){cV=cV.length>1?cV.slice(0,-1):'0';scr.innerText=cV}
+        function cl(){cV='0';pV='';cO=null;scr.innerText='0';hist.innerText=''}
+        function op(e){
+            const t=parseFloat(cV);
+            if(cO&&wN){cO=e;hist.innerText=pV+" "+cO;return}
+            if(pV==='')pV=t;else if(cO){const e=pf(pV,t,cO);cV=String(e);pV=e}
+            wN=!0;cO=e;scr.innerText=cV;hist.innerText=pV+" "+cO
+        }
+        function eq(){
+            if(!cO)return;let e=pf(pV,parseFloat(cV),cO);hist.innerText=pV+" "+cO+" "+cV+" =";
+            cV=String(e);pV='';cO=null;wN=!0;scr.innerText=cV.substring(0,12)
+        }
+        function pf(e,t,n){return n==='+'?e+t:n==='-'?e-t:n==='*'?e*t:n==='/'?e/t:n==='%'?e*t/100:t}
     </script>
 </body>
 </html>
+
