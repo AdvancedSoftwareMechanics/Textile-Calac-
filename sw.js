@@ -1,4 +1,4 @@
-const CACHE_NAME = 'textile-calc-v2'; // Update လုပ်ချင်ရင် v2 လို့ ပြောင်းပါ
+const CACHE_NAME = 'textile-calc-v3'; // Update လုပ်ချင်ရင် v2 လို့ ပြောင်းပါ
 const ASSETS = [
   'index.html',
   'manifest.json'
