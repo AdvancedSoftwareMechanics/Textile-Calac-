@@ -1,5 +1,5 @@
 // ၁။ Cache နာမည် (Update လုပ်တိုင်း v1, v2 စသဖြင့် ပြောင်းပေးပါ)
-const CACHE_NAME = 'textile-calc-v9';
+const CACHE_NAME = 'textile-calc-v10';
 
 // ၂။ Offline သိမ်းထားရမယ့် ဖိုင်စာရင်း
 const ASSETS_TO_CACHE = [
